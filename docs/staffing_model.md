@@ -45,9 +45,12 @@ hard-coded data.
    (a span of 16 slots)** in any single day.
 7. Demand per slot (`d`) is derived from historical transaction volume (see
    `ref_demand_by_slot`), using a configurable bills-per-staff service rate.
-8. The planning horizon is one **fortnight** (14 days). Guaranteed hours and budget
-   are defined per fortnight.
+8. The planning horizon is one **fortnight** (14 days). Guaranteed hours are defined
+   per fortnight.
 9. A staff member works at most one slot at a time (no double-booking).
+10. A staff member works at most their **guaranteed hours plus a fixed overtime
+    margin** $\Delta$ over the fortnight ($\Delta = 16$ h). This caps individual
+    overtime and prevents the optimiser piling hours onto the cheapest staff.
 
 ---
 
@@ -70,7 +73,7 @@ hard-coded data.
 | $a_{s,t} \in \{0,1\}$ | 1 if staff $s$ is available in slot $t$ | `bridge_staff_availability` |
 | $w_s$ | Hourly wage rate of staff $s$ | `dim_staff` |
 | $h_s$ | Guaranteed hours per fortnight for staff $s$ | `dim_staff` |
-| $B$ | Total staff budget per fortnight | model input |
+| $\Delta$ | Overtime margin: max hours above guaranteed per fortnight ($\Delta = 16$) | model input |
 | $L$ | Maximum continuous working slots before a break ($L = 12$) | labour rule |
 | $M$ | Maximum daily span in slots, working + break ($M = 16$, i.e. 8 hours) | labour rule |
 | $\tau = 0.5$ | Hours per slot | constant |
@@ -146,7 +149,17 @@ $$
 \qquad \forall s \in S
 $$
 
-**(6) Budget** — removed. The objective already minimises total wage cost; the model reports the minimum spend needed to meet coverage and guaranteed hours. Budget compliance is assessed externally by comparing the reported cost against the available budget.
+**(6) Maximum hours** — each staff member works at most their guaranteed hours plus
+the overtime margin $\Delta$ over the fortnight:
+
+$$
+\sum_{t \in T} \tau \, x_{s,t} \;\le\; h_s + \Delta
+\qquad \forall s \in S
+$$
+
+This caps individual overtime. Together with constraint (1), it means demand must be
+coverable within everyone's capped hours — if not, the model is infeasible, signalling
+that headcount or contracted hours need revisiting (see Notes).
 
 **(7) Binary domain**:
 
@@ -159,10 +172,12 @@ $$
 
 ## Notes and Limitations
 
-- **Feasibility tension.** Constraints (1) and (5) push the solution to use more
-  labour; constraint (6) caps it. If demand coverage plus guaranteed hours exceed the
-  budget, the model is infeasible — this is itself a useful signal that the budget or
-  headcount needs revisiting.
+- **Feasibility tension.** Constraint (1) demands enough labour to cover every slot,
+  while constraint (6) caps each person's hours at $h_s + \Delta$. If total capped
+  capacity $\sum_s (h_s + \Delta)$ is below total demand, the model is infeasible — a
+  useful signal that headcount or contracted hours need revisiting. (The earlier design
+  used a budget cap here instead; that was removed in favour of reporting the
+  minimum-cost schedule directly.)
 - **Break length.** With 30-minute slots, constraint (3) forces exactly one 30-minute
   break per 6-hour block, matching assumption 4. A longer mandated break would require
   widening the window or adding a dedicated break-length constraint.

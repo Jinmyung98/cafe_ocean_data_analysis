@@ -26,6 +26,7 @@ HORIZON    = 14                           # days in planning horizon
 L          = 12                           # max continuous working slots (6 h)
 M          = 16                           # max daily span in slots (8 h)
 TAU        = 0.5                          # hours per slot
+MAX_EXTRA_HOURS = 16                      # fortnightly hours cap = guaranteed + this
 
 # 30 operating slots in order: 10:00, 10:30, ..., 23:30, 00:00, 00:30
 SLOT_LABELS = [f"{h:02d}:{m:02d}:00" for h in range(10, 24) for m in (0, 30)]
@@ -174,6 +175,14 @@ def build_and_solve(demand, staff_ids, wage, guaranteed, avail_set, calendar):
             f"guar_{s}"
         )
 
+    # (6) Maximum hours: at most guaranteed + MAX_EXTRA_HOURS over the fortnight
+    for s in staff_ids:
+        prob += (
+            TAU * pulp.lpSum(x[s, d, t] for d, _, _ in calendar for t in range(N_SLOTS))
+            <= guaranteed[s] + MAX_EXTRA_HOURS,
+            f"maxhours_{s}"
+        )
+
     # gapRel=0.01: stop when best integer solution is within 1% of lower bound.
     # timeLimit=300: hard fallback in case gap closes slowly.
     solver = pulp.PULP_CBC_CMD(msg=1, gapRel=0.01, timeLimit=300)
@@ -207,8 +216,13 @@ def print_summary(schedule_df, staff_ids, wage, guaranteed):
         hours = len(schedule_df[schedule_df["staff_id"] == s]) * TAU
         cost  = hours * wage[s]
         total_cost += cost
-        flag = "  !! BELOW GUARANTEE" if hours < guaranteed[s] - 0.01 else ""
-        print(f"  {s}  {hours:5.1f} h  (min {guaranteed[s]} h)  ${cost:8.2f}{flag}")
+        cap  = guaranteed[s] + MAX_EXTRA_HOURS
+        flag = ""
+        if hours < guaranteed[s] - 0.01:
+            flag = "  !! BELOW GUARANTEE"
+        elif hours > cap + 0.01:
+            flag = "  !! ABOVE CAP"
+        print(f"  {s}  {hours:5.1f} h  (min {guaranteed[s]}, max {cap:.0f} h)  ${cost:8.2f}{flag}")
     print(f"\n  TOTAL COST : ${total_cost:,.2f}  (minimum cost to meet coverage + guaranteed hours)")
 
 
