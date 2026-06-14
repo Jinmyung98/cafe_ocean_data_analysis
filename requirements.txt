@@ -1,0 +1,25 @@
+# Cafe Ocean Data Analysis — Python dependencies
+# Tested on Python 3.12 (dbt is not yet compatible with 3.14).
+# Install:  pip install -r requirements.txt
+
+# --- Data pipeline: dbt + DuckDB ---
+dbt-core==1.11.11
+dbt-duckdb==1.10.1
+dbt-adapters==1.24.2
+duckdb==1.5.3
+
+# --- Data handling ---
+pandas==3.0.3
+numpy==2.4.6
+
+# --- Optimisation (staffing & stock ILPs) ---
+PuLP==3.3.2
+
+# --- Excel ingestion (load_raw.py) ---
+openpyxl==3.1.5
+
+# --- EDA: notebooks & visualisation ---
+jupyterlab==4.5.8
+ipykernel==7.2.0
+matplotlib==3.10.9
+seaborn==0.13.2
