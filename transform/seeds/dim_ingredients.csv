@@ -1,0 +1,27 @@
+ingredient_id,ingredient_name,unit,shelf_life_days,purchase_unit_name,purchase_unit_size,purchase_unit_cost,supplier_id
+ING001,Hookah Charcoal,pieces,365,Pack of 100,100,250.00,SUP001
+ING002,Hookah Foil Sheets,sheets,365,Roll of 50,50,80.00,SUP001
+ING003,Tobacco - Nirvana,g,180,Pouch 250g,250,450.00,SUP001
+ING004,Tobacco - Mint,g,180,Pouch 250g,250,380.00,SUP001
+ING005,Tobacco - Calcutta Mint,g,180,Pouch 250g,250,420.00,SUP001
+ING006,Tobacco - NRG,g,180,Pouch 250g,250,400.00,SUP001
+ING007,Tobacco - Green Apple,g,180,Pouch 250g,250,380.00,SUP001
+ING008,Tobacco - Silver Apple,g,180,Pouch 250g,250,390.00,SUP001
+ING009,Tobacco - Arabian Mist,g,180,Pouch 250g,250,410.00,SUP001
+ING010,Tobacco - Red Wine Sheesha,g,180,Pouch 250g,250,430.00,SUP001
+ING011,Tobacco - Sambuca,g,180,Pouch 250g,250,440.00,SUP001
+ING012,Full Cream Milk,ml,7,Carton 1L,1000,65.00,SUP002
+ING013,Vanilla Ice Cream,ml,30,Tub 2L,2000,320.00,SUP002
+ING014,Oreo Cookies,pieces,90,Pack of 20,20,95.00,SUP002
+ING015,Chocolate Sauce,ml,180,Bottle 500ml,500,160.00,SUP002
+ING016,Frozen French Fries,g,60,Bag 2kg,2000,280.00,SUP002
+ING017,Cheese Curds,g,14,Pack 500g,500,220.00,SUP002
+ING018,Poutine Gravy Mix,g,180,Pack 400g,400,120.00,SUP002
+ING019,Panini Bread,pieces,3,Pack of 10,10,150.00,SUP002
+ING020,Deli Meat Assorted,g,5,Pack 500g,500,350.00,SUP002
+ING021,Cheese Slices,slices,14,Pack of 20,20,120.00,SUP002
+ING022,Espresso Beans,g,90,Bag 1kg,1000,650.00,SUP002
+ING023,Red Bull 250ml Can,cans,365,Case of 24,24,2200.00,SUP004
+ING024,Carlsberg Beer Can,cans,180,Case of 24,24,1800.00,SUP003
+ING025,Tuborg Beer Can,cans,180,Case of 24,24,1700.00,SUP003
+ING026,KF Draught Keg 30L,ml,30,Keg 30L,30000,4500.00,SUP003

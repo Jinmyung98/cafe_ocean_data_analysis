@@ -1,0 +1,5 @@
+supplier_id,supplier_name,lead_time_days,contact
+SUP001,PremiumTobacco Co.,2,orders@premiumtobacco.demo
+SUP002,Metro Cash & Carry,1,cafe.account@metro.demo
+SUP003,AB InBev Distributor,3,sales@abinbev.demo
+SUP004,Red Bull Distributor,2,trade@redbull.demo

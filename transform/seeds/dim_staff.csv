@@ -1,0 +1,9 @@
+staff_id,staff_name,role,guaranteed_hours_per_fortnight,hourly_rate
+STF001,Ana Salgado,manager,60,22.00
+STF002,Ben Kuruvilla,bartender,50,18.00
+STF003,Clara Mendes,bartender,40,17.00
+STF004,Dev Nair,server,40,15.00
+STF005,Elena Pinto,server,25,14.00
+STF006,Felix Raj,kitchen,50,16.00
+STF007,Gita Sharma,server,20,14.00
+STF008,Hao Chen,barista,30,15.00

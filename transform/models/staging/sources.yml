@@ -1,0 +1,30 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: main
+    description: "Raw tables loaded directly from source files into DuckDB."
+    tables:
+      - name: raw_transactions
+        description: "Raw Cafe Ocean POS transactions loaded from the Kaggle Excel file."
+        columns:
+          - name: bill_number
+            description: "Bill identifier. One bill can contain multiple line items."
+          - name: date
+            description: "Transaction date."
+          - name: transaction_time
+            description: "Transaction time as a string (HH:MM:SS). Cast to TIME in staging."
+          - name: item_desc
+            description: "Product name, uppercased and stripped on load."
+          - name: category
+            description: "Product category, uppercased and stripped on load."
+          - name: quantity
+            description: "Units sold."
+          - name: rate
+            description: "Unit price before tax and discount."
+          - name: tax
+            description: "Tax amount applied."
+          - name: discount
+            description: "Discount amount applied."
+          - name: total
+            description: "Final transaction value after tax and discount."
