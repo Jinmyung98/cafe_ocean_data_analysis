@@ -1,4 +1,0 @@
-shift_id,shift_name,start_time,end_time
-SHF001,Morning,10:00,15:00
-SHF002,Afternoon,15:00,20:00
-SHF003,Evening,20:00,01:00
