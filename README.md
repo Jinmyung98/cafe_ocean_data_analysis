@@ -1,29 +1,59 @@
-# Cafe Ocean — Sales Data Analysis
+# Cafe Ocean — Operations Analytics
 
-A data analysis project using Cafe Ocean's point-of-sale records to support two
-operational decisions: **staff scheduling** and **weekly stock purchasing**.
+Turn a café-bar's point-of-sale history into two operational decisions —
+**staff scheduling** and **weekly stock purchasing** — through an analytics-engineering
+pipeline (DuckDB + dbt) and integer-programming optimisers (PuLP + CBC).
 
-## Business Problems
+---
 
-**1. Staff scheduling optimisation**
-Given a fortnightly staff budget and a minimum guaranteed hours commitment per
-employee, determine how to allocate shifts so that coverage matches demand while
-staying within budget.
+## Business problems
 
-**2. Stock purchasing optimisation**
-Given stockroom capacity (including front-of-house storage), determine how much
-of each ingredient to purchase each week to meet expected demand without
-over-ordering.
+**1. Staff scheduling.** Given each employee's availability, approved leave, guaranteed
+hours and an overtime cap, decide who works which 30-minute slots over a fortnight so
+that customer demand is covered at **minimum wage cost**, while respecting labour rules:
+max 6 h continuous before a break, a 30-minute break, max 8 h daily span, a single
+contiguous shift per day, and a 3 h minimum shift.
+
+**2. Stock purchasing.** Given each ingredient's weekly demand (derived from sales × a
+bill of materials), storage capacity and shelf life, decide how many purchase units to
+order each week at **minimum cost** without over-ordering perishables.
+
+---
+
+## Approach
+
+```
+Kaggle Excel ─► load_raw.py ─► DuckDB (raw_transactions)
+                                  └─ dbt staging  stg_transactions  (typed, cleaned)
+                                      └─ dbt marts dim_items, fact_transactions,
+                                                   ref_demand_by_slot,
+                                                   ref_ingredient_demand_weekly
+Manually-maintained reference data ─► dbt seeds  (staff, availability, leave, BOM,
+                                                  ingredients, suppliers, capacity, promos)
+
+Optimisers (PuLP + CBC):
+  src/staff_optimiser.py   demand + availability + leave + labour rules ─► roster
+  src/stock_optimiser.py   weekly demand + capacity + shelf life         ─► purchase order
+  src/roster_sheet.py      per-slot schedule ─► distributable weekly roster
+```
+
+Full schema in [docs/data_model.md](docs/data_model.md); ILP formulations in
+[docs/staffing_model.md](docs/staffing_model.md) and
+[docs/stock_model.md](docs/stock_model.md).
+
+**Tech stack:** Python 3.12 · DuckDB · dbt (dbt-duckdb) · PuLP + CBC · pandas · Jupyter · matplotlib / seaborn
+
+---
 
 ## Dataset
 
-**Primary data:** [Cafe Ocean Data Analysis](https://www.kaggle.com/datasets/gladinvarghese/cafeocean) published on Kaggle by
-Gladin Varghese. Stored as an Excel file with 10 fields:
+[Cafe Ocean dataset](https://www.kaggle.com/datasets/gladinvarghese/cafeocean) (Kaggle,
+Gladin Varghese) — ~145,800 transaction line items in an Excel file:
 
 | Field | Description |
 |---|---|
 | Date | Transaction date |
-| Bill Number | Unique transaction ID |
+| Bill Number | Transaction ID |
 | Item Desc | Product sold |
 | Time | Time of transaction |
 | Quantity | Units sold |
@@ -33,25 +63,73 @@ Gladin Varghese. Stored as an Excel file with 10 fields:
 | Total | Final transaction value |
 | Category | Product category |
 
-**Supplementary data (manually constructed):**
+All supplementary tables (staff, availability, leave, ingredients, suppliers, bill of
+materials, stockroom capacity, promotions) are **manually-maintained dbt seeds** with
+illustrative demo values.
 
-| Data | Purpose |
+---
+
+## Key results (demo run)
+
+**Staffing** — 12 staff, one fortnight, 30-minute slots:
+- Minimum-cost roster ≈ **$8,693 / 533.5 h**, all demand covered, every labour rule and
+  leave request honoured, in a single contiguous shift per person per day.
+- Surfaces real trade-offs: capping individual overtime at *guaranteed + 16 h* forced a
+  full-time hire, and the solution runs at **~98% of capped capacity** — a fragility flag.
+
+**Stock** — 26 ingredients, one week:
+- Minimum-cost order ≈ **₹122,365**; the hookah/tobacco line (the #1 revenue category in
+  the EDA) dominates spend.
+- Pre-checks flag **3 perishables** (milk, bread, deli meat) that cannot be bulk-ordered
+  weekly — they belong on a shorter delivery cycle, which the model reports rather than
+  silently mis-ordering.
+
+---
+
+## Run it
+
+```bash
+python -m venv .venv
+.venv/Scripts/activate            # Windows; use source .venv/bin/activate on macOS/Linux
+pip install -r requirements.txt
+
+python src/load_raw.py --full-refresh          # Excel -> DuckDB raw_transactions
+cd transform && dbt seed && dbt run && cd ..    # seeds + staging + marts
+
+python src/staff_optimiser.py     # -> outputs/schedule.csv
+python src/roster_sheet.py        # -> outputs/roster.md, outputs/roster.csv
+python src/stock_optimiser.py     # -> outputs/purchase_order.csv
+```
+
+Place the Kaggle Excel at `data/raw/Cafe_Ocean.xlsx` first (the raw file is gitignored).
+
+---
+
+## Outputs
+
+| File | Contents |
 |---|---|
-| Stockroom capacity | Constraint for purchasing optimisation |
-| Bill of materials (ingredient quantities per product) | Convert sales volume into raw material demand |
-| Purchase unit sizes (e.g. 1 L milk per bottle) | Match demand to purchasable quantities |
-| Staff guaranteed hours per fortnight | Constraint for scheduling optimisation |
-| Minimum staffing requirement by time period | Derive from transaction frequency thresholds |
-| Operating hours and shift windows | Define allocatable shift slots for the staffing model |
-| Staff headcount and availability | Bound how many staff can be rostered on any given day |
-| Supplier lead time per ingredient | Account for delivery lag in the stock purchasing model |
-| Item cost / cost of goods sold (COGS) | Enable margin analysis and quantify waste in dollar terms |
-| Reorder frequency and horizon | Define the purchasing cycle length (assumed weekly) |
-| Ingredient shelf life | Prevent over-ordering perishables; key constraint for stock model |
+| `outputs/schedule.csv` | Per-slot staff assignments |
+| `outputs/roster.md` / `roster.csv` | Distributable fortnight roster (weekly grids, OFF/LEAVE) |
+| `outputs/purchase_order.csv` | Weekly ingredient purchase order |
+| `outputs/figures/` | EDA charts |
 
-## Deliverables
+---
 
-- Demand forecast by hour / day of week
-- Waste monitoring: excess ingredient usage relative to transactions
-- Automated staff roster generator
+## Assumptions & limitations
 
+- **Demand is predicted, not causal** — derived from historical averages; assumes the
+  future resembles the past, with no allowance for one-off events or trend growth.
+- **Service-rate sensitivity** — staffing demand depends on an assumed bills-per-staff
+  service rate (a dbt variable); results should be read as sensitivity to that assumption.
+- **Solver gap** — the single-shift staffing ILP has a weak LP relaxation, so it is solved
+  to a 5% optimality gap (~2–3 min) rather than proven optimal.
+- **Illustrative seeds** — all manually-seeded values (wages, ingredient prices, BOM,
+  capacities, leave) are demo data, not Cafe Ocean's real figures.
+
+---
+
+## Roadmap
+
+- **Dashboards** (in progress): a café-operations dashboard, a roster dashboard, and a
+  stock dashboard.
