@@ -83,6 +83,11 @@ erDiagram
         time slot_start
         int available
     }
+    bridge_staff_leave {
+        string staff_id FK
+        date leave_date
+        string leave_type
+    }
     ref_ingredient_demand_weekly {
         string ingredient_id PK
         string ingredient_name
@@ -127,6 +132,7 @@ erDiagram
     dim_items ||--o| ref_promotional_items : "promo-flagged by"
     fact_transactions ||--o{ ref_demand_by_slot : "aggregated into"
     dim_staff ||--o{ bridge_staff_availability : "available for"
+    dim_staff ||--o{ bridge_staff_leave : "takes leave"
     dim_items ||--o{ bridge_bill_of_materials : "requires"
     bridge_bill_of_materials }o--|| dim_ingredients : "uses"
     dim_ingredients }o--|| dim_suppliers : "sourced from"
@@ -233,6 +239,20 @@ The `(day_of_week, slot_start)` convention matches `ref_demand_by_slot`, so the
 optimiser lines demand up against availability directly. See
 [staffing_model.md](staffing_model.md).
 
+### bridge_staff_leave
+**Type:** Seed. File: `transform/seeds/bridge_staff_leave.csv`
+**Grain:** One row per staff member per full day of approved leave.
+
+| Column | Type | Notes |
+|---|---|---|
+| staff_id | string | FK to `dim_staff` |
+| leave_date | date | A calendar date the staff member is off (blocks all slots that day) |
+| leave_type | string | e.g. `annual`, `sick`, `personal` |
+
+Leave is date-specific (unlike the recurring `bridge_staff_availability` pattern). The
+optimiser blocks every slot on a leave date and pro-rates the staff member's guaranteed
+hours by the working days lost.
+
 ---
 
 ## Stock purchasing model
@@ -324,14 +344,15 @@ Kaggle Excel
                                   (× bridge_bill_of_materials × dim_ingredients)
 
 Seeds (dbt seed)
-    Staffing:  dim_staff, bridge_staff_availability
+    Staffing:  dim_staff, bridge_staff_availability, bridge_staff_leave
     Stock:     ref_promotional_items, dim_ingredients, bridge_bill_of_materials,
                dim_suppliers, ref_stockroom_capacity
 ```
 
 **Staffing model** uses:
-`ref_demand_by_slot` (demand) + `bridge_staff_availability` (supply) + `dim_staff`
-(cost & contracted hours) → roster.
+`ref_demand_by_slot` (demand) + `bridge_staff_availability` (supply) + `bridge_staff_leave`
+(time off) + `dim_staff` (cost & contracted hours) → roster (`src/roster_sheet.py`
+turns it into a distributable sheet).
 
 **Stock purchasing model** uses:
 `ref_ingredient_demand_weekly` (demand) + `ref_stockroom_capacity` (storage) +
