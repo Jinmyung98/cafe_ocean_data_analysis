@@ -142,6 +142,17 @@ It reads `data/cafe_ocean.duckdb` read-only. The Roster and Stock pages need the
 optimisers to have been run first; until their output CSVs exist, each page shows a
 prompt to run the relevant script rather than erroring.
 
+### Preview
+
+**Operations**
+![Operations dashboard](docs/images/dashboard_operations.png)
+
+**Roster**
+![Roster dashboard](docs/images/dashboard_roster.png)
+
+**Stock**
+![Stock dashboard](docs/images/dashboard_stock.png)
+
 ---
 
 ## Assumptions & limitations
