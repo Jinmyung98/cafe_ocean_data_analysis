@@ -41,7 +41,7 @@ Full schema in [docs/data_model.md](docs/data_model.md); ILP formulations in
 [docs/staffing_model.md](docs/staffing_model.md) and
 [docs/stock_model.md](docs/stock_model.md).
 
-**Tech stack:** Python 3.12 · DuckDB · dbt (dbt-duckdb) · PuLP + CBC · pandas · Jupyter · matplotlib / seaborn
+**Tech stack:** Python 3.12 · DuckDB · dbt (dbt-duckdb) · PuLP + CBC · pandas · Jupyter · matplotlib / seaborn · Plotly Dash
 
 ---
 
@@ -116,6 +116,34 @@ Place the Kaggle Excel at `data/raw/Cafe_Ocean.xlsx` first (the raw file is giti
 
 ---
 
+## Dashboard
+
+An interactive [Plotly Dash](https://dash.plotly.com/) app (`app/`) presents the pipeline
+and optimiser outputs across three pages, styled as a report (serif display headings,
+KPI cards, mono section labels, a dark hero header and footer). Each page closes with a
+"takeaways" row of insight cards summarising its headline numbers.
+
+- **Operations** — revenue / bills / average-bill KPIs with date and category filters;
+  a revenue-by-category donut, top items, a day-of-week × hour demand heatmap, daily trend
+  and hourly profile (from `fact_transactions` × `dim_items`).
+- **Roster** — a fortnight shift Gantt (one row per staff, coloured by role, leave shaded),
+  hours against each person's guaranteed floor and overtime cap, and a coverage-vs-demand
+  check for any chosen day (from `outputs/schedule.csv` + staff seeds + `ref_demand_by_slot`).
+- **Stock** — order cost by supplier and menu category, storage utilisation after delivery,
+  weekly demand per ingredient, and the perishables the optimiser excludes
+  (from `outputs/purchase_order.csv` + demand, capacity and supplier tables).
+
+```bash
+pip install -r requirements.txt   # includes dash + plotly
+python app/app.py                 # serves at http://127.0.0.1:8050
+```
+
+It reads `data/cafe_ocean.duckdb` read-only. The Roster and Stock pages need the
+optimisers to have been run first; until their output CSVs exist, each page shows a
+prompt to run the relevant script rather than erroring.
+
+---
+
 ## Assumptions & limitations
 
 - **Demand is predicted, not causal** — derived from historical averages; assumes the
@@ -131,5 +159,7 @@ Place the Kaggle Excel at `data/raw/Cafe_Ocean.xlsx` first (the raw file is giti
 
 ## Roadmap
 
-- **Dashboards** (in progress): a café-operations dashboard, a roster dashboard, and a
-  stock dashboard.
+- **Dashboards** ✓ — café-operations, roster, and stock pages shipped (see
+  [Dashboard](#dashboard)).
+- **Live data refresh** — schedule the raw load + dbt build so the marts and dashboard
+  track new sales automatically.

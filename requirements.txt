@@ -23,3 +23,7 @@ jupyterlab==4.5.8
 ipykernel==7.2.0
 matplotlib==3.10.9
 seaborn==0.13.2
+
+# --- Dashboard (app/) ---
+dash==4.2.0
+plotly==6.8.0
